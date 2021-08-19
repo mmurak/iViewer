@@ -1,0 +1,149 @@
+<html>
+  <head>
+    <title>Intonation Listening Test</title>
+    <link rel="shortcut icon" href="SunGoldKiwi-bird.png">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
+  </head>
+  <body>
+    <input type="file"  id="audioFile" onclick="this.value=null;" accept=".mp3"/></input>
+    <hr>
+    <input type="button" id="playstop" value="Play/Pause" onclick="playStop();" disabled="true"></input>
+    <select id="speedSelector" onchange="speedController(this.value);">
+      <option>0.25</option>
+      <option>0.50</option>
+      <option>0.75</option>
+      <option selected="true">1.00</option>
+      <option>1.25</option>
+      <option>1.50</option>
+      <option>1.75</option>
+      <option>2.00</option>
+    </select>
+    <hr>
+    <div>
+      <canvas id="canvas" width="800" height="240"></canvas>
+    </div>
+    <div>
+      <audio id="audio01"></audio>
+    </div>
+
+    <script>
+    /* Web Audioを用いたスペクトログラムのプログラムについては BVE Workshop 様のページ（ https://bvews.jpn.org/articles/spectrogram-by-web-audio-api.html ）で学習させていただき、該当部分のコードを借用しています。　ありがとうございます。 */
+    const FFTsize = 8192;
+    const MINdec = -100;
+    const MAXdec = -30;
+
+    const audioFile = document.getElementById("audioFile");
+    const audioDevice = document.getElementById("audio01");
+    const playstop = document.getElementById("playstop");
+    const speedSelector = document.getElementById("speedSelector");
+
+    const canvas = document.getElementById('canvas');
+    const renderingContext = canvas.getContext('2d');
+    const colorMap = generateColorMap({ r: 0, g: 0, b: 255 }, { r: 255, g: 255, b: 0 });
+
+    renderingContext.fillStyle = colorMap[0];
+    renderingContext.fillRect(0, 0, canvas.width, canvas.height);
+    const audioContext = new AudioContext();
+    const mediaElementSourceNode = audioContext.createMediaElementSource(audioDevice);
+    const analyserNode = audioContext.createAnalyser();
+
+    analyserNode.fftSize = FFTsize;
+    analyserNode.minDecibels = MINdec;
+    analyserNode.maxDecibels = MAXdec;
+    analyserNode.smoothingTimeConstant = 0;
+
+    mediaElementSourceNode.connect(analyserNode);
+    analyserNode.connect(audioContext.destination);
+
+    let isPlaying = false;
+
+    audioFile.addEventListener("change",function(evt){
+      let file = evt.target.files[0];
+      console.log(window.URL.createObjectURL(file));
+      audioDevice.src = window.URL.createObjectURL(file);
+      playstop.disabled = false;
+    },false);
+
+    function playStop() {
+      if (isPlaying) {
+        audioDevice.pause();
+      } else {
+        audioDevice.play();
+      }
+    }
+
+    function speedController(value) {
+      audioDevice.playbackRate = value;
+    }
+
+    audioDevice.addEventListener("play",function () {
+      startUpdatingSpectrogram();
+    });
+
+    audioDevice.addEventListener("pause",function () {
+      stopUpdatingSpectrogram();
+    });
+
+    audioDevice.addEventListener("ended",function () {
+      stopUpdatingSpectrogram();
+    });
+
+    function startUpdatingSpectrogram() {
+      if (!isPlaying) {
+        isPlaying = true;
+        requestAnimationFrame(function mainLoop() {
+          if (isPlaying) {
+            feedSpectrogram();
+            requestAnimationFrame(mainLoop);
+          }
+        });
+      }
+    }
+
+    function stopUpdatingSpectrogram() {
+      isPlaying = false;
+    }
+
+    function generateColorMap(dark, light) {
+      const result = [];
+      for (let i = 0; i < 256; i++) {
+        let rate = i / (256 - 1);
+        rate = rate * rate;
+        let r, g, b;
+        if (rate < 0.33) {
+          const coef = (rate - 0) / (0.33 - 0);
+          r = 0 + dark.r * coef;
+          g = 0 + dark.g * coef;
+          b = 0 + dark.b * coef;
+        } else if (rate < 0.66) {
+          const coef = (rate - 0.33) / (0.66 - 0.33);
+          r = dark.r * (1 - coef) + light.r * coef;
+          g = dark.g * (1 - coef) + light.g * coef;
+          b = dark.b * (1 - coef) + light.b * coef;
+        } else {
+          const coef = (rate - 0.66) / (1 - 0.66);
+          r = light.r * (1 - coef) + 255 * coef;
+          g = light.g * (1 - coef) + 255 * coef;
+          b = light.b * (1 - coef) + 255 * coef;
+        }
+        result[i] = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+      }
+      return result;
+    }
+
+    function feedSpectrogram() {
+      renderingContext.drawImage(canvas, -3, 0);
+      const frequencyData = new Uint8Array(analyserNode.frequencyBinCount);
+      analyserNode.getByteFrequencyData(frequencyData);
+      for (let i = 0; i < canvas.height; i++) {
+        if (i < frequencyData.length) {
+          renderingContext.fillStyle = colorMap[frequencyData[i]];
+        } else {
+          renderingContext.fillStyle = colorMap[0];
+        }
+        renderingContext.fillRect(canvas.width - 3, canvas.height - 1 - i, 3, 1);
+      }
+    }
+  </script>
+  </body>
+</html>
