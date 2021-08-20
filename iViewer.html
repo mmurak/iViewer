@@ -6,8 +6,23 @@
   </head>
   <body>
     <input type="file"  id="audioFile" onclick="this.value=null;" accept=".mp3"/></input>
+    <input type="button" id="clearCanvas" value="Erase Canvas" onclick="clearCanvas();"></input>
+    Canvas width: 
+    <select id="id="canvasWidth" name="canvaswidth" onchange="newCanvasWidth(this.value);">
+      <option value="9999">- Manual Entry -</option>
+      <option value="400">400</option>
+      <option value="500">500</option>
+      <option value="600">600</option>
+      <option value="700">700</option>
+      <option value="800" selected>800</option>
+      <option value="900">900</option>
+      <option value="1000">1000</option>
+      <option value="1100">1100</option>
+      <option value="1200">1200</option>
+    </select>
     <hr>
     <input type="button" id="playstop" value="Play/Pause" onclick="playStop();" disabled="true"></input>
+    Play speed: 
     <select id="speedSelector" onchange="speedController(this.value);">
       <option>0.25</option>
       <option>0.50</option>
@@ -36,21 +51,25 @@
     const audioDevice = document.getElementById("audio01");
     const playstop = document.getElementById("playstop");
     const speedSelector = document.getElementById("speedSelector");
-
+    const canvasWidth = document.getElementById("canvasWidth");
     const canvas = document.getElementById('canvas');
-    const renderingContext = canvas.getContext('2d');
     const colorMap = generateColorMap({ r: 0, g: 0, b: 255 }, { r: 255, g: 255, b: 0 });
 
-    renderingContext.fillStyle = colorMap[0];
-    renderingContext.fillRect(0, 0, canvas.width, canvas.height);
+    let renderingContext;
+    clearCanvas();
     const audioContext = new AudioContext();
     const mediaElementSourceNode = audioContext.createMediaElementSource(audioDevice);
     const analyserNode = audioContext.createAnalyser();
 
-    analyserNode.fftSize = FFTsize;
-    analyserNode.minDecibels = MINdec;
-    analyserNode.maxDecibels = MAXdec;
+    let ParmList = null;
+
+    analyserNode.fftSize = (getParm("FFTsize") == "") ? FFTsize : Number(getParm("FFTsize"));
+    analyserNode.minDecibels = (getParm("MIN") == "") ? MINdec : Number(getParm("MIN"));
+    analyserNode.maxDecibels = (getParm("MAX") == "") ? MAXdec : Number(getParm("MAX"));
     analyserNode.smoothingTimeConstant = 0;
+    console.log("FFT size: " + analyserNode.fftSize);
+    console.log("Min. size: " + analyserNode.minDecibels);
+    console.log("Max. size: " + analyserNode.maxDecibels);
 
     mediaElementSourceNode.connect(analyserNode);
     analyserNode.connect(audioContext.destination);
@@ -59,10 +78,26 @@
 
     audioFile.addEventListener("change",function(evt){
       let file = evt.target.files[0];
-      console.log(window.URL.createObjectURL(file));
       audioDevice.src = window.URL.createObjectURL(file);
       playstop.disabled = false;
     },false);
+
+    function clearCanvas() {
+      renderingContext = canvas.getContext('2d');
+      renderingContext.fillStyle = colorMap[0];
+      renderingContext.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function newCanvasWidth(value) {
+      if (value == 9999) {
+        value = window.prompt("Enter canvas width:", "800");
+        if ((value == null) || (!value.match(/^[0-9]+$/))) {
+          return;
+        }
+      }
+      canvas.width = value;
+      clearCanvas();
+    }
 
     function playStop() {
       if (isPlaying) {
@@ -74,6 +109,25 @@
 
     function speedController(value) {
       audioDevice.playbackRate = value;
+    }
+
+    function getParm(key) {
+      if (ParmList == null) {
+        ParmList = [];
+        var arg = location.search.substring(1);
+        if (arg != "") {
+          let args = arg.split("&");
+          for(let i = 0; i < args.length; i++) {
+            parmPair = args[i].split("=");
+            ParmList[parmPair[0]] = parmPair[1];
+          }
+        }
+      }
+      if (key in ParmList) {
+        return ParmList[key];
+      } else {
+        return "";
+      }
     }
 
     audioDevice.addEventListener("play",function () {
