@@ -21,7 +21,12 @@
       <option value="1200">1200</option>
     </select>
     <hr>
-    <input type="button" id="playstop" value="Play/Pause" onclick="playStop();" disabled="true"></input>
+    <div>
+      <canvas id="canvas" width="800" height="240"></canvas>
+    </div>
+    <div>
+      <audio id="audio01" controls></audio>
+    </div>
     Play speed: 
     <select id="speedSelector" onchange="speedController(this.value);">
       <option>0.25</option>
@@ -33,13 +38,6 @@
       <option>1.75</option>
       <option>2.00</option>
     </select>
-    <hr>
-    <div>
-      <canvas id="canvas" width="800" height="240"></canvas>
-    </div>
-    <div>
-      <audio id="audio01"></audio>
-    </div>
 
     <script>
     /* Web Audioを用いたスペクトログラムのプログラムについては BVE Workshop 様のページ（ https://bvews.jpn.org/articles/spectrogram-by-web-audio-api.html ）で学習させていただき、該当部分のコードを借用しています。　ありがとうございます。 */
@@ -55,6 +53,7 @@
     const canvas = document.getElementById('canvas');
     const colorMap = generateColorMap({ r: 0, g: 0, b: 255 }, { r: 255, g: 255, b: 0 });
 
+    audioDevice.style = "width:" + canvas.width;
     let renderingContext;
     clearCanvas();
     const audioContext = new AudioContext();
@@ -96,6 +95,7 @@
         }
       }
       canvas.width = value;
+      audioDevice.style = "width:" + canvas.width;
       clearCanvas();
     }
 
