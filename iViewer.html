@@ -3,7 +3,15 @@
     <title>Intonation Viewer </title>
     <link rel="shortcut icon" href="SunGoldKiwi-bird.png">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
-  </head>
+    <style>
+audio::-webkit-media-controls-mute-button {
+  display: none !important;
+}
+audio::-webkit-media-controls-volume-slider {
+  display: none !important;
+}
+    </style>
+   </head>
   <body>
     <input type="file"  id="audioFile" onclick="this.value=null;" accept=".mp3"/></input>
     <input type="button" id="clearCanvas" value="Erase Canvas" onclick="clearCanvas();"></input>
@@ -47,7 +55,6 @@
 
     const audioFile = document.getElementById("audioFile");
     const audioDevice = document.getElementById("audio01");
-    const playstop = document.getElementById("playstop");
     const speedSelector = document.getElementById("speedSelector");
     const canvasWidth = document.getElementById("canvasWidth");
     const canvas = document.getElementById('canvas');
@@ -78,7 +85,6 @@
     audioFile.addEventListener("change",function(evt){
       let file = evt.target.files[0];
       audioDevice.src = window.URL.createObjectURL(file);
-      playstop.disabled = false;
     },false);
 
     function clearCanvas() {
@@ -97,14 +103,6 @@
       canvas.width = value;
       audioDevice.style = "width:" + canvas.width;
       clearCanvas();
-    }
-
-    function playStop() {
-      if (isPlaying) {
-        audioDevice.pause();
-      } else {
-        audioDevice.play();
-      }
     }
 
     function speedController(value) {
