@@ -130,6 +130,7 @@ audio::-webkit-media-controls-volume-slider {
     }
 
     audioDevice.addEventListener("play",function () {
+      speedController(speedSelector.value);
       startUpdatingSpectrogram();
     });
 
