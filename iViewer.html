@@ -64,28 +64,30 @@ audio::-webkit-media-controls-volume-slider {
     audioDevice.style = "width:" + canvas.width;
     let renderingContext;
     clearCanvas();
-    const audioContext = new AudioContext();
-    const mediaElementSourceNode = audioContext.createMediaElementSource(audioDevice);
-    const analyserNode = audioContext.createAnalyser();
+    let audioContext ;
+    let mediaElementSourceNode;
+    let analyserNode;
 
     let ParmList = null;
-
-    analyserNode.fftSize = (getParm("FFTsize") == "") ? FFTsize : Number(getParm("FFTsize"));
-    analyserNode.minDecibels = (getParm("MIN") == "") ? MINdec : Number(getParm("MIN"));
-    analyserNode.maxDecibels = (getParm("MAX") == "") ? MAXdec : Number(getParm("MAX"));
-    analyserNode.smoothingTimeConstant = 0;
-    console.log("FFT size: " + analyserNode.fftSize);
-    console.log("Min. size: " + analyserNode.minDecibels);
-    console.log("Max. size: " + analyserNode.maxDecibels);
-
-    mediaElementSourceNode.connect(analyserNode);
-    analyserNode.connect(audioContext.destination);
 
     let isPlaying = false;
 
     audioFile.addEventListener("change",function(evt){
       let file = evt.target.files[0];
       audioDevice.src = window.URL.createObjectURL(file);
+      audioContext = new AudioContext();
+      mediaElementSourceNode = audioContext.createMediaElementSource(audioDevice);
+      analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = (getParm("FFTsize") == "") ? FFTsize : Number(getParm("FFTsize"));
+      analyserNode.minDecibels = (getParm("MIN") == "") ? MINdec : Number(getParm("MIN"));
+      analyserNode.maxDecibels = (getParm("MAX") == "") ? MAXdec : Number(getParm("MAX"));
+      analyserNode.smoothingTimeConstant = 0;
+      console.log("FFT size: " + analyserNode.fftSize);
+      console.log("Min. size: " + analyserNode.minDecibels);
+      console.log("Max. size: " + analyserNode.maxDecibels);
+      mediaElementSourceNode.connect(analyserNode);
+      analyserNode.connect(audioContext.destination);
+
     },false);
 
     function clearCanvas() {
